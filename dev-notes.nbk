@@ -51,3 +51,10 @@ MOVE REPRESENTATION.
         or maybe R={chain@(3,3)}, P={w@(3,4)}.
 
 
+IDEAS:
+
+* Represent game updates as 'moves' by a third 'player'
+    - For complex boards like Life Genesis to keep game of life logic in one place
+    - Need to be able to express order of players:
+        - P1 -> P2 -> G  -> P1 -> ...
+        - P1 -> G  -> P2 -> G  -> ...
