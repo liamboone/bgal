@@ -1,0 +1,72 @@
+# pre-alpha draft description of Chess
+# This is meant to be an extremely loose 
+# specification of the game of chess to 
+# generate ideas for BGAL syntax
+
+Board:
+    8 x 8, 8-neighbor labeled, solid edges
+    
+Players:
+    {Black, White},
+    Black faces south { Pawn: a-h;7,
+                        Rook: ah;8,
+                        Knight: bg;8,
+                        Bishop: cf;8,
+                        Queen: d;8,
+                        King: e;8 },
+    White faces north { Pawn: a-h;2,
+                        Rook: ah;1,
+                        Knight: bg;1,
+                        Bishop: cf;1,
+                        Queen: d;1,
+                        King: e;1 }
+
+# passive moves require an empty space to move into and through
+# agressive moves do not require empty landing spaces
+# free moves do not pass through intermediate squares
+# halting moves stop after the first obstacle
+
+# Note: "Night Rider" piece would be hard to describe this way
+
+# moves can have [constraints] and secondary <actions>
+Pieces:
+    Pawn { passive one units forward,                   # Normal movement
+           agressive one units up and one units left,   # Attacks
+           agressive one units up and one units right,
+           passive two units up [pawn_unmoved],         # Opening stride
+           agressive one units up and one units left [pawn_en_passant] <capture_en_passant>,
+           agressive one units up and one units right [pawn_en_passant] <capture_en_passant> }
+    Knight { agressive free one units left/right and two units up/down,
+             agressive free two units left/right and one units up/down }
+    Bishop { agressive halting N units up/down and N units left/right }
+    Rook { agressive halting N units up/down/left/right }
+    Queen { agressive halting N units up/down and N units left/right,
+            agressive halting N units up/down/left/right }
+    King { agressive one units up/down and one units left/right,
+           agressive one units up/down/left/right,
+           passive two units east [castle_east] <rook_east_castle>,
+           passive two units west [castle_west] <rook_west_castle> }
+
+Constraints:
+    c0: no shared positions,
+    c1: agressor removes attacked piece,
+    c2: king must not be threatened,
+    pawn_promotable: Black Pawn on rank 1 or White Pawn on rank 8,
+    pawn_unmoved: Black Pawn on rank 7 or White Pawn on rank 2,
+    pawn_en_passant: ... #some description of en passant here
+    castle_east: ...,
+    castle_west: ...
+    
+Actions:
+    rook_east_castle: east castle place 2 units west,
+    rook_east_castle: west castle place 3 units east,
+    pawn_en_passant: ...
+    
+Game:
+    First play White,
+    alternate,
+    c0 c1 and c2 hold,
+    if c1 does not hold then all possible next moves must resolve c1,
+    if no moves and c1 does not hold then lose as CHECKMATE,
+    if no moves and c1 holds then lose as STALEMATE
+    
