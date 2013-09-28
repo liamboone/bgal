@@ -1,20 +1,50 @@
+ABSTRACT MODEL.
+
+    * What is a Player?
+
+    * What is a Piece?
+
+    * What is a Board?
+
+    * What is a Move?
+
+        - Must cover "Placement moves" and "movement moves"
+
+        - Possibility:
+            -> A move is is a pair of sets, R and P, where, subject to the rules of the game,
+                - R is a set of pieces removed from the board
+                - P is a set of pieces added to the board
+        - Example.
+            A knight capturing a queen might be represented as R={wN@e4, bQ@d2},
+            P={wN@d2}. We could express a go move the same way, R={}, P={b@(0,3)},
+            or maybe R={chain@(3,3)}, P={w@(3,4)}.
+
+    * What is a Game?
+        
+        - What is an end-condition?
+
+        - What is a victory?
+
+
+
+
 VARIOUS GAME ATTRIBUTES.
 
-Chess
+* Chess
 - Complex and situational piece movement
 - Piece promotion
 - Forced moves (Check[mate])
 - Algebraic notation (almost a meta-program)
 
-Go
+* Go
 - Territory
 - Liberties
 - Placement from an unlimited reserve
 
-Tafl
+* Tafl
 - Asymmetric win conditions
 
-Life Genesis (http://en.wikipedia.org/wiki/Life_Genesis)
+* Life Genesis (http://en.wikipedia.org/wiki/Life_Genesis)
 - A turing complete game board
 
 
@@ -35,23 +65,8 @@ value and then the state evaluates to our pieces minus their pieces.
 
 
 
-MOVE REPRESENTATION.
 
-* How to define a "move" generally enough / still useful
-    - Cover "Placement moves" and "movement moves"
-
-* Possibility:
-    * A move is is a pair of sets, R and P, where, subject to the rules of the game,
-        - R is a set of pieces removed from the board
-        - P is a set of pieces added to the board
-
-    * Example.
-        A knight capturing a queen might be represented as R={wN@e4, bQ@d2},
-        P={wN@d2}. We could express a go move the same way, R={}, P={b@(0,3)},
-        or maybe R={chain@(3,3)}, P={w@(3,4)}.
-
-
-IDEAS:
+IDEAS.
 
 * Represent game updates as 'moves' by a third 'player'
     - For complex boards like Life Genesis to keep game of life logic in one place
