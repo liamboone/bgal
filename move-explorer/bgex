@@ -1,0 +1,229 @@
+#!/usr/bin/python
+
+import os, sys, curses
+from subprocess import Popen, call, PIPE
+
+PAD = 3
+
+DISP = "E2O"
+READ = "I2E"
+MOVES = "MOVES"
+MOVE = "EME"
+CPU = "CPU"
+CMDLIST = [DISP, MOVES, MOVE, CPU, READ]
+
+ARG = ""
+if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]):
+    ARG = os.path.abspath(sys.argv[1])
+
+while not os.path.isfile(".bgexrc") and not os.path.isfile("bgexrc") and not os.path.isdir(".git") and not os.getcwd() == '/home/' and not os.getcwd() == '/':
+    os.chdir('..')
+
+if os.path.isfile(".bgexrc"):
+    BGEXRC = open(".bgexrc", 'r')
+elif os.path.isfile("bgexrc"):
+    BGEXRC = open("bgexrc", 'r')
+else:
+    sys.stderr.write("Could not find '.bgexrc'. Cannot explore moves without one!\n")
+    sys.exit(1)
+
+
+settings = {}
+
+bglines = BGEXRC.readlines()
+for line in bglines:
+    (var,val) = line.split("=")
+    settings[var.strip()] = val.strip()
+
+
+for c in CMDLIST:
+    if c not in settings:
+        sys.stderr.write("Error reading .bgexrc: No '" + c + "'.\n")
+        sys.exit(2)
+    if not os.path.isfile(settings[c]):
+        sys.stderr.write("Cannot find binary '" + settings[c] + "' for '"
+                + c + "'.\n")
+        sys.exit(3)
+
+
+cpu_avail = (CPU in settings)
+
+
+
+class Position:
+    def __init__(self, w, b):
+        self.win = w
+        self.board = b
+
+        self.win.keypad(1)
+
+        self.fill_pane()
+
+    def fill_pane(self):
+        (height, width) = self.win.getmaxyx()
+
+        self.width_used = 0
+
+        proc = Popen([settings[DISP], self.board], stdout = PIPE)
+        board_lines = proc.stdout.readlines()
+        for line in board_lines:
+            self.win.addstr(line)
+            self.width_used = max(self.width_used, len(line))
+
+        # Horizontal separator
+        self.win.addstr('\n')
+        (self.hbar, x) = self.win.getyx()
+        self.win.attron(curses.color_pair(1))
+        self.width_used += PAD
+        self.win.hline(self.hbar, x, '-', self.width_used)
+        self.win.attroff(curses.color_pair(1))
+
+        self.win.move(self.hbar + 2, x)
+
+        proc = Popen([settings[MOVES], self.board], stdout = PIPE)
+        self.moves = proc.stdout.readlines()
+
+        cpu_proc = Popen([settings[CPU], self.board], stdout = PIPE)
+        self.cpu = cpu_proc.stdout.readline()
+
+        self.colors = {}
+
+        # Hilight first move
+        if len(self.moves) > 0:
+            self.hilighted = 0
+        else:
+            self.hilighted = -1
+
+
+        # Strip the whitespace off each line; this will help with hilighter
+        # movement.
+        for (i, line) in enumerate(self.moves):
+            if line == self.cpu:
+                self.colors[i] = 2
+            self.moves[i] = line.strip()
+
+            self.width_used = max(self.width_used, len(line))
+            self.paint_move(i)
+
+        # Vertical separator
+        self.win.attron(curses.A_REVERSE)
+        self.win.vline(0, self.width_used, '|', height)
+        self.win.attroff(curses.A_REVERSE)
+
+        self.win.refresh()
+
+    def move_up(self):
+        if self.hilighted <= 0:
+            return
+
+        self.hilighted -= 1
+        self.paint_move(self.hilighted + 1)
+        self.paint_move(self.hilighted)
+
+        self.win.refresh()
+
+    def move_down(self):
+        if self.hilighted == -1 or self.hilighted >= len(self.moves) - 1:
+            return
+        
+        self.hilighted += 1
+        self.paint_move(self.hilighted - 1)
+        self.paint_move(self.hilighted)
+
+        self.win.refresh()
+
+    def fork(self):
+        proc = Popen([settings[MOVE], self.board, self.moves[self.hilighted]], stdout = PIPE)
+        board = proc.stdout.readline()
+        
+        win = self.win.derwin(0, self.width_used + 1)
+
+        return Position(win, board)
+
+    def has_children(self):
+        return self.hilighted != -1
+    
+    def kill(self):
+        self.win.erase()
+        self.win.refresh()
+
+    def paint_move(self, index):
+        
+        if index in self.colors:
+            self.win.attron(curses.color_pair(self.colors[index]))
+
+        if index == self.hilighted:
+            self.win.attron(curses.A_REVERSE)
+
+        self.win.addstr(self.hbar + 2 + index, 0, self.moves[index])
+
+        if index == self.hilighted:
+            self.win.attroff(curses.A_REVERSE)
+        if index in self.colors:
+            self.win.attroff(curses.color_pair(self.colors[index]))
+
+def main(initialwin):
+
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.curs_set(0)
+
+    curses.def_prog_mode()
+
+    proc = Popen([settings[READ], ARG], stdout = PIPE)
+    board = proc.stdout.readline()
+
+    init_pos = Position(initialwin, board)
+    position_stack = [init_pos]
+    hide_stack = []
+
+    # Main interact-act loop
+    while True:
+
+        c = initialwin.getch()
+
+        if c == 113 or c == 81:
+            return 0
+
+        # Up
+        if c == 259 or c == 107:
+            position_stack[-1].move_up()
+
+        # Down
+        if c == 258 or c == 106:
+            position_stack[-1].move_down()
+
+        # Left
+        if c == 260 or c == 104:
+            if len(position_stack) > 1:
+                position_stack.pop().kill()
+                position_stack[-1].win.refresh()
+
+        # Right
+        if c == 261 or c == 108:
+            (h, w) = initialwin.getmaxyx()
+            total = sum([p.width_used + PAD - 1 for p in position_stack])
+
+            # Assume new position will be the same width as the last
+            width_req = position_stack[-1].width_used + PAD - 1 
+
+            # position_stack[-1].win.addstr(str(total) + ' ' + str(width_req))
+            """
+            curses.reset_shell_mode()
+            os.system('clear')
+            print total, ' ', width_req, ' ', total + width_req, '|',  w
+            sys.stdout.flush()
+            sys.stdin.readline()
+            curses.reset_prog_mode()
+            """
+
+            if position_stack[-1].has_children() and total + width_req < w:
+                position_stack.append(position_stack[-1].fork())
+
+            #TODO XXX
+            # else:
+                # while not position_stack[-1].can_fork():
+
+
+
+curses.wrapper(main)

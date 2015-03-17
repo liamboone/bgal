@@ -1,0 +1,5 @@
+I2E=./bin/read-tics
+E2O=./bin/show-tics
+MOVES=./bin/tics
+EME=./bin/tic
+CPU=./bin/c-tic

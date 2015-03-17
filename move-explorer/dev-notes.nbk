@@ -1,0 +1,45 @@
+
+
+* FORMATS REQ'D:
+    * Board formats
+        - <I> Input format
+        - <E> Encoded format
+        - <O> Output format
+
+    * Moves have only one format: <M>
+
+* PROGRAMS REQ'D:
+    * I2E <I>
+        - Read in a board in the input format and write its encoding to stdout
+        - If the board isn't valid, returns a non-zero value
+
+    * E2O <E>
+        - Prints an arbritrary set of lines which are a human-viewable display
+
+    * MOVES <Board>
+        - Prints a list of <M>'s from the given position
+        - Returns non-zero on error or if the board isn't valid
+
+    * EME <E> <M>
+        - Prints an <E> which results from applying the <M> to the given <E>
+        - Returns non-zero if the move isn't valid
+
+    
+    * (OPTIONAL) CPU <E>
+        - Prints an <M> indicating what the computer would do in the given
+          position.
+        - Returns non-zero on computer error
+
+
+Example of a game-definition file:
+----------------------------------
+I2E=./bin/read-board
+E2O=./bin/show-board
+MOVES=./bin/moves
+EME=./bin/move
+cpu=./bin/c-move
+----------------------------------
+
+
+* BUGS:
+* Returned 
